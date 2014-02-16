@@ -49,7 +49,7 @@ $(document).ready(function () {
             dataType: 'json',
             success: function (json) {
 
-                if ( json.found == 0 ){
+                if (json.found == 0) {
                     $(".result").html('<div class="alert alert-warning">nothing found</div>');
                     return;
                 }
@@ -75,11 +75,6 @@ $(document).ready(function () {
                     percent = d3.format(".1%"),
                     format = d3.time.format("%Y-%m-%d");
 
-                var color = d3.scale.quantize()
-                    .domain([1, 100])
-                    .range(d3.range(11).map(function (d) {
-                        return "q" + d + "-11";
-                    }));
 
                 var minYear = parseInt(d3.min(json.matches, function (d) {
                     return d.release_date.substr(0, 4);
@@ -88,6 +83,19 @@ $(document).ready(function () {
                 var maxYear = parseInt(d3.max(json.matches, function (d) {
                     return d.release_date.substr(0, 4);
                 }));
+
+                var maxFound = 1;
+                for (var key in data) {
+                    if (data.hasOwnProperty(key)) {
+                        maxFound = Math.max(maxFound, objectSize(data[key]));
+                    }
+                }
+
+                var color = d3.scale.quantize()
+                    .domain([0, maxFound])
+                    .range(d3.range(11).map(function (d) {
+                        return "q" + d + "-11";
+                    }));
 
                 var svg = d3.select(".result").selectAll("svg")
                     .data(d3.range(minYear, maxYear + 1))
