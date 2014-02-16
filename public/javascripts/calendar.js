@@ -3,7 +3,7 @@
  */
 
 // needs to be set
-var apikey = "c9f14fb15628e6ae189e07a6135f953090ea5f02872911e0cedf";
+var apikey = "your api key";
 
 $(document).ready(function () {
 
