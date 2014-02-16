@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap 101 Template</title>
+
+    <!-- Bootstrap -->
+    <link href="stylesheets/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+
+        body {
+            font: 10px sans-serif;
+            shape-rendering: crispEdges;
+        }
+
+        .day {
+            fill: #fff;
+            stroke: #ccc;
+        }
+
+        .month {
+            fill: none;
+            stroke: #000;
+            stroke-width: 2px;
+        }
+
+        .RdYlGn .q0-11 {
+            fill: rgb(165, 0, 38)
+        }
+
+        .RdYlGn .q1-11 {
+            fill: rgb(215, 48, 39)
+        }
+
+        .RdYlGn .q2-11 {
+            fill: rgb(244, 109, 67)
+        }
+
+        .RdYlGn .q3-11 {
+            fill: rgb(253, 174, 97)
+        }
+
+        .RdYlGn .q4-11 {
+            fill: rgb(254, 224, 139)
+        }
+
+        .RdYlGn .q5-11 {
+            fill: rgb(255, 255, 191)
+        }
+
+        .RdYlGn .q6-11 {
+            fill: rgb(217, 239, 139)
+        }
+
+        .RdYlGn .q7-11 {
+            fill: rgb(166, 217, 106)
+        }
+
+        .RdYlGn .q8-11 {
+            fill: rgb(102, 189, 99)
+        }
+
+        .RdYlGn .q9-11 {
+            fill: rgb(26, 152, 80)
+        }
+
+        .RdYlGn .q10-11 {
+            fill: rgb(0, 104, 55)
+        }
+
+        div.tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+    </style>
+
+</head>
+<body>
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="javascripts/bootstrap.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script>
+
+    // needs to be set
+    var apikey = "c9f14fb15628e6ae189e07a6135f953090ea5f02872911e0cedf";
+
+    $(document).ready(function () {
+
+        function setHeader(xhr) {
+            xhr.setRequestHeader("X-Authorization", apikey)
+        }
+
+        function objectSize(obj) {
+            var size = 0, key;
+            for (key in obj) {
+                if (obj.hasOwnProperty(key)) size++;
+            }
+            return size;
+        };
+
+        function generateTooltip(data){
+            var t = "<p>" + objectSize(data) + " Artikel</p>";
+            t += "<ul>";
+            for(var d in data){
+                if(data.hasOwnProperty(d)){
+                    t += "<li><a target='_blank' href='" + data[d][0].href + "'>" + data[d][0].title + "</a></li>"
+                }
+            }
+            t += "</ul>"
+            return t;
+        }
+
+        var div = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+
+        $.ajax({
+            url: 'http://api.zeit.de/content?q=Recklinghausen&offset=0&limit=10',
+            type: 'GET',
+            dataType: 'json',
+            success: function (json) {
+
+                var data = d3.nest()
+                        .key(function (d) {
+                            return d.release_date.substr(0, 10);
+                        })
+                        .key(function (d) {
+                            return d.uuid;
+                        })
+                        .rollup(function (d) {
+                            return d
+                        })
+                        .map(json.matches);
+
+                console.log(data);
+
+                var width = 960,
+                        height = 136,
+                        cellSize = 17; // cell size
+
+                var day = d3.time.format("%w"),
+                        week = d3.time.format("%U"),
+                        percent = d3.format(".1%"),
+                        format = d3.time.format("%Y-%m-%d");
+
+                var color = d3.scale.quantize()
+                        .domain([1, 100])
+                        .range(d3.range(11).map(function (d) {
+                            return "q" + d + "-11";
+                        }));
+
+                var minYear = parseInt(d3.min(json.matches, function (d) {
+                    return d.release_date.substr(0, 4);
+                }));
+
+                var maxYear = parseInt(d3.max(json.matches, function (d) {
+                    return d.release_date.substr(0, 4);
+                }));
+
+                var svg = d3.select("body").selectAll("svg")
+                        .data(d3.range(minYear, maxYear + 1))
+                        .enter().append("svg")
+                        .attr("width", width)
+                        .attr("height", height)
+                        .attr("class", "RdYlGn")
+                        .append("g")
+                        .attr("transform", "translate(" + ((width - cellSize * 53) / 2) + "," + (height - cellSize * 7 - 1) + ")");
+
+                svg.append("text")
+                        .attr("transform", "translate(-6," + cellSize * 3.5 + ")rotate(-90)")
+                        .style("text-anchor", "middle")
+                        .text(function (d) {
+                            return d;
+                        });
+
+                rect = svg.selectAll(".day")
+                        .data(function (d) {
+                            return d3.time.days(new Date(d, 0, 1), new Date(d + 1, 0, 1));
+                        })
+                        .enter().append("rect")
+                        .attr("class", "day")
+                        .attr("width", cellSize)
+                        .attr("height", cellSize)
+                        .attr("x", function (d) {
+                            return week(d) * cellSize;
+                        })
+                        .attr("y", function (d) {
+                            return day(d) * cellSize;
+                        })
+                        .datum(format);
+
+                rect.append("title")
+                        .text(function (d) {
+                            return d;
+                        });
+
+                svg.selectAll(".month")
+                        .data(function (d) {
+                            return d3.time.months(new Date(d, 0, 1), new Date(d + 1, 0, 1));
+                        })
+                        .enter().append("path")
+                        .attr("class", "month")
+                        .attr("d", monthPath);
+
+                function monthPath(t0) {
+                    var t1 = new Date(t0.getFullYear(), t0.getMonth() + 1, 0),
+                            d0 = +day(t0), w0 = +week(t0),
+                            d1 = +day(t1), w1 = +week(t1);
+                    return "M" + (w0 + 1) * cellSize + "," + d0 * cellSize
+                            + "H" + w0 * cellSize + "V" + 7 * cellSize
+                            + "H" + w1 * cellSize + "V" + (d1 + 1) * cellSize
+                            + "H" + (w1 + 1) * cellSize + "V" + 0
+                            + "H" + (w0 + 1) * cellSize + "Z";
+                }
+
+                d3.select(self.frameElement).style("height", "2910px");
+
+                rect.filter(function (d) {
+                    return d in data;
+                }).attr("class", function (d) {
+                            return "day " + color(objectSize(data[d]));
+                        })
+                        .on("mouseover", function (d) {
+                            div.transition()
+                                    .duration(200)
+                                    .style("opacity", .9);
+                            div.html(generateTooltip(data[d]))
+                                    .style("left", (d3.event.pageX) + "px")
+                                    .style("top", (d3.event.pageY - 28) + "px");
+                        });
+
+            },
+            error: function () {
+                alert('error!');
+            },
+            beforeSend: setHeader
+        });
+
+    });
+</script>
+
+</body>
+</html>
